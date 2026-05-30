@@ -17,7 +17,7 @@ services:
     volumes:
       - ./frontend:/app:cached
       - /app/node_modules
-    command: npm run dev -- --host 0.0.0.0
+    command: bun run dev -- --host 0.0.0.0
     
   celery-worker:
     environment:
