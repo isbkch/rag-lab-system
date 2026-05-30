@@ -15,3 +15,4 @@ backend/app/services/search/__pycache__
 backend/app/services/vectordb/__pycache__
 backend/alembic/__pycache__
 backend/alembic/versions/__pycache__
+AGENTS.md
