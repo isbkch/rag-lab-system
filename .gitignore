@@ -10,3 +10,4 @@ __pycache__/
 .local-run/
 *.db
 mock_ai/uv.lock
+docs/superpowers
