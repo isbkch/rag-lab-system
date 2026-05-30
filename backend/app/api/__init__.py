@@ -1,3 +1,1 @@
-"""
-API package for the RAG platform.
-"""
+"""API package for the failure laboratory."""

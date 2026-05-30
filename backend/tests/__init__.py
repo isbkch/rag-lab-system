@@ -1,3 +1,1 @@
-"""
-Test suite for the RAG platform.
-"""
+"""Test suite for the failure laboratory."""

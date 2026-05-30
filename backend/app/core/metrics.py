@@ -1,10 +1,7 @@
-"""
-Prometheus metrics integration for comprehensive monitoring.
-"""
+"""Prometheus metrics for the failure laboratory."""
 
 import logging
 import time
-from functools import wraps
 from typing import Any, Dict
 
 import psutil
@@ -15,7 +12,6 @@ from prometheus_client import (
     Histogram,
     Info,
     generate_latest,
-    multiprocess,
 )
 
 from app.core.config import settings
@@ -43,105 +39,25 @@ http_request_duration_seconds = Histogram(
     registry=REGISTRY,
 )
 
-# Search Metrics
-search_requests_total = Counter(
-    "search_requests_total",
-    "Total search requests",
-    ["search_type", "status"],
+# Scenario Metrics
+scenario_runs_total = Counter(
+    "scenario_runs_total",
+    "Total scenario runs",
+    ["scenario_id", "status"],
     registry=REGISTRY,
 )
 
-search_duration_seconds = Histogram(
-    "search_duration_seconds",
-    "Search operation duration in seconds",
-    ["search_type"],
+scenario_duration_seconds = Histogram(
+    "scenario_duration_seconds",
+    "Scenario duration in seconds",
+    ["scenario_id"],
     registry=REGISTRY,
 )
 
-search_results_count = Histogram(
-    "search_results_count",
-    "Number of search results returned",
-    ["search_type"],
-    registry=REGISTRY,
-)
-
-# Document Processing Metrics
-documents_processed_total = Counter(
-    "documents_processed_total",
-    "Total documents processed",
-    ["status", "document_type"],
-    registry=REGISTRY,
-)
-
-document_processing_duration_seconds = Histogram(
-    "document_processing_duration_seconds",
-    "Document processing duration in seconds",
-    ["operation", "document_type"],
-    registry=REGISTRY,
-)
-
-document_chunks_created_total = Counter(
-    "document_chunks_created_total",
-    "Total document chunks created",
-    ["chunking_strategy"],
-    registry=REGISTRY,
-)
-
-# Vector Database Metrics
-vector_operations_total = Counter(
-    "vector_operations_total",
-    "Total vector database operations",
-    ["operation", "provider", "status"],
-    registry=REGISTRY,
-)
-
-vector_operation_duration_seconds = Histogram(
-    "vector_operation_duration_seconds",
-    "Vector database operation duration in seconds",
-    ["operation", "provider"],
-    registry=REGISTRY,
-)
-
-vector_index_size = Gauge(
-    "vector_index_size",
-    "Number of vectors in the index",
-    ["provider", "collection"],
-    registry=REGISTRY,
-)
-
-# Embedding Metrics
-embeddings_generated_total = Counter(
-    "embeddings_generated_total",
-    "Total embeddings generated",
-    ["provider", "model", "status"],
-    registry=REGISTRY,
-)
-
-embedding_generation_duration_seconds = Histogram(
-    "embedding_generation_duration_seconds",
-    "Embedding generation duration in seconds",
-    ["provider", "model"],
-    registry=REGISTRY,
-)
-
-embedding_cache_hits_total = Counter(
-    "embedding_cache_hits_total",
-    "Total embedding cache hits",
-    ["cache_type"],
-    registry=REGISTRY,
-)
-
-# Rate Limiting Metrics
-rate_limit_violations_total = Counter(
-    "rate_limit_violations_total",
-    "Total rate limit violations",
-    ["client_type", "endpoint"],
-    registry=REGISTRY,
-)
-
-active_rate_limited_clients = Gauge(
-    "active_rate_limited_clients",
-    "Number of currently rate limited clients",
+dependency_status = Gauge(
+    "dependency_status",
+    "Dependency status where 1 is healthy and 0 is degraded",
+    ["component"],
     registry=REGISTRY,
 )
 
@@ -169,33 +85,6 @@ errors_total = Counter(
     registry=REGISTRY,
 )
 
-# Cache Metrics
-cache_operations_total = Counter(
-    "cache_operations_total",
-    "Total cache operations",
-    ["operation", "cache_type", "status"],
-    registry=REGISTRY,
-)
-
-cache_size = Gauge(
-    "cache_size", "Current cache size", ["cache_type"], registry=REGISTRY
-)
-
-# Connection Pool Metrics
-database_connections_active = Gauge(
-    "database_connections_active",
-    "Active database connections",
-    ["database_type"],
-    registry=REGISTRY,
-)
-
-database_connections_idle = Gauge(
-    "database_connections_idle",
-    "Idle database connections",
-    ["database_type"],
-    registry=REGISTRY,
-)
-
 
 class MetricsCollector:
     """Centralized metrics collector for the application."""
@@ -211,8 +100,7 @@ class MetricsCollector:
                 "version": settings.APP_VERSION,
                 "name": settings.APP_NAME,
                 "environment": "development" if settings.DEBUG else "production",
-                "vector_db_provider": settings.VECTOR_DB_PROVIDER,
-                "embedding_provider": getattr(settings, "EMBEDDING_PROVIDER", "openai"),
+                "purpose": "failure-laboratory",
             }
         )
 
@@ -228,120 +116,23 @@ class MetricsCollector:
             duration
         )
 
-    def record_search_operation(
-        self, search_type: str, duration: float, result_count: int, success: bool = True
+    def record_scenario_run(
+        self, scenario_id: str, status: str, duration: float | None = None
     ):
-        """Record search operation metrics."""
-        status = "success" if success else "error"
+        """Record scenario run metrics."""
+        scenario_runs_total.labels(scenario_id=scenario_id, status=status).inc()
+        if duration is not None:
+            scenario_duration_seconds.labels(scenario_id=scenario_id).observe(duration)
 
-        search_requests_total.labels(search_type=search_type, status=status).inc()
-
-        if success:
-            search_duration_seconds.labels(search_type=search_type).observe(duration)
-            search_results_count.labels(search_type=search_type).observe(result_count)
-
-    def record_document_processing(
-        self,
-        operation: str,
-        document_type: str,
-        duration: float,
-        chunks_created: int = 0,
-        chunking_strategy: str = None,
-        success: bool = True,
-    ):
-        """Record document processing metrics."""
-        status = "success" if success else "error"
-
-        documents_processed_total.labels(
-            status=status, document_type=document_type
-        ).inc()
-
-        if success:
-            document_processing_duration_seconds.labels(
-                operation=operation, document_type=document_type
-            ).observe(duration)
-
-            if chunks_created > 0 and chunking_strategy:
-                document_chunks_created_total.labels(
-                    chunking_strategy=chunking_strategy
-                ).inc(chunks_created)
-
-    def record_vector_operation(
-        self, operation: str, provider: str, duration: float, success: bool = True
-    ):
-        """Record vector database operation metrics."""
-        status = "success" if success else "error"
-
-        vector_operations_total.labels(
-            operation=operation, provider=provider, status=status
-        ).inc()
-
-        if success:
-            vector_operation_duration_seconds.labels(
-                operation=operation, provider=provider
-            ).observe(duration)
-
-    def update_vector_index_size(self, provider: str, collection: str, size: int):
-        """Update vector index size metric."""
-        vector_index_size.labels(provider=provider, collection=collection).set(size)
-
-    def record_embedding_generation(
-        self,
-        provider: str,
-        model: str,
-        duration: float,
-        count: int = 1,
-        success: bool = True,
-    ):
-        """Record embedding generation metrics."""
-        status = "success" if success else "error"
-
-        embeddings_generated_total.labels(
-            provider=provider, model=model, status=status
-        ).inc(count)
-
-        if success:
-            embedding_generation_duration_seconds.labels(
-                provider=provider, model=model
-            ).observe(duration)
-
-    def record_cache_hit(self, cache_type: str):
-        """Record cache hit."""
-        embedding_cache_hits_total.labels(cache_type=cache_type).inc()
-
-    def record_rate_limit_violation(self, client_type: str, endpoint: str):
-        """Record rate limit violation."""
-        rate_limit_violations_total.labels(
-            client_type=client_type, endpoint=endpoint
-        ).inc()
-
-    def update_active_rate_limited_clients(self, count: int):
-        """Update active rate limited clients count."""
-        active_rate_limited_clients.set(count)
+    def update_dependency_status(self, component: str, healthy: bool):
+        """Update dependency health gauge."""
+        dependency_status.labels(component=component).set(1 if healthy else 0)
 
     def record_error(self, error_type: str, component: str, severity: str = "error"):
         """Record error occurrence."""
         errors_total.labels(
             error_type=error_type, component=component, severity=severity
         ).inc()
-
-    def record_cache_operation(
-        self, operation: str, cache_type: str, success: bool = True
-    ):
-        """Record cache operation."""
-        status = "success" if success else "error"
-        cache_operations_total.labels(
-            operation=operation, cache_type=cache_type, status=status
-        ).inc()
-
-    def update_cache_size(self, cache_type: str, size: int):
-        """Update cache size metric."""
-        cache_size.labels(cache_type=cache_type).set(size)
-
-    def update_database_connections(self, database_type: str, active: int, idle: int):
-        """Update database connection metrics."""
-        database_connections_active.labels(database_type=database_type).set(active)
-        database_connections_idle.labels(database_type=database_type).set(idle)
 
     def update_system_metrics(self):
         """Update system resource metrics."""
@@ -412,44 +203,7 @@ def generate_metrics() -> str:
         # Update system metrics before generating output
         get_metrics_collector().update_system_metrics()
 
-        # Handle multiprocess mode if needed
-        if hasattr(multiprocess, "MultiProcessCollector"):
-            registry = CollectorRegistry()
-            multiprocess.MultiProcessCollector(registry)
-            return generate_latest(registry)
-        else:
-            return generate_latest(REGISTRY)
+        return generate_latest(REGISTRY)
     except Exception as e:
         logger.error(f"Failed to generate metrics: {e}")
         return f"# Error generating metrics: {e}\n"
-
-
-def metrics_middleware(func):
-    """Middleware decorator to automatically record HTTP metrics."""
-
-    @wraps(func)
-    async def wrapper(request, *args, **kwargs):
-        start_time = time.time()
-        status_code = 200
-
-        try:
-            response = await func(request, *args, **kwargs)
-            if hasattr(response, "status_code"):
-                status_code = response.status_code
-            return response
-        except Exception as e:
-            status_code = 500
-            get_metrics_collector().record_error(
-                error_type=type(e).__name__, component="http", severity="error"
-            )
-            raise
-        finally:
-            duration = time.time() - start_time
-            get_metrics_collector().record_http_request(
-                method=request.method,
-                endpoint=request.url.path,
-                status_code=status_code,
-                duration=duration,
-            )
-
-    return wrapper

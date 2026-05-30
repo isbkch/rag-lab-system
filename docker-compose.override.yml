@@ -1,5 +1,4 @@
-# Development overrides for docker-compose.yml
-# This file is automatically used when running docker compose in development
+# Development overrides for docker-compose.yml.
 
 services:
   backend:
@@ -9,7 +8,14 @@ services:
     volumes:
       - ./backend:/app:cached
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    
+
+  celery-worker:
+    environment:
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - ./backend:/app:cached
+
   frontend:
     environment:
       - VITE_DEV_MODE=true
@@ -18,17 +24,8 @@ services:
       - ./frontend:/app:cached
       - /app/node_modules
     command: bun run dev -- --host 0.0.0.0
-    
-  celery-worker:
-    environment:
-      - DEBUG=true
-      - LOG_LEVEL=DEBUG
+
+  mock-ai:
     volumes:
-      - ./backend:/app:cached
-      
-  celery-beat:
-    environment:
-      - DEBUG=true
-      - LOG_LEVEL=DEBUG
-    volumes:
-      - ./backend:/app:cached
+      - ./mock_ai:/app:cached
+    command: uvicorn main:app --host 0.0.0.0 --port 9000 --reload

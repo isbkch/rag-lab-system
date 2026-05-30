@@ -1,27 +1,25 @@
 services:
-  # PostgreSQL Database
   postgres:
     image: postgres:17-alpine
-    container_name: rag-postgres
+    container_name: failure-lab-postgres
     environment:
-      POSTGRES_USER: rag_user
-      POSTGRES_PASSWORD: rag_password
-      POSTGRES_DB: rag_platform
+      POSTGRES_USER: lab_user
+      POSTGRES_PASSWORD: lab_password
+      POSTGRES_DB: failure_lab
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./backend/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rag_user -d rag_platform"]
+      test: ["CMD-SHELL", "pg_isready -U lab_user -d failure_lab"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # Redis for caching and message broker
   redis:
     image: redis:8-alpine
-    container_name: rag-redis
+    container_name: failure-lab-redis
     ports:
       - "6379:6379"
     volumes:
@@ -32,30 +30,9 @@ services:
       timeout: 5s
       retries: 5
 
-  # Elasticsearch for keyword search
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:9.4.1
-    container_name: rag-elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ports:
-      - "9200:9200"
-      - "9300:9300"
-    volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data
-    healthcheck:
-      test:
-        ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
-  # ChromaDB Vector Database
   chromadb:
     image: ghcr.io/chroma-core/chroma:1.5.9
-    container_name: rag-chromadb
+    container_name: failure-lab-chromadb
     ports:
       - "8002:8000"
     volumes:
@@ -73,110 +50,86 @@ services:
       timeout: 10s
       retries: 5
 
-  # Backend API
+  mock-ai:
+    build:
+      context: ./mock_ai
+      dockerfile: Dockerfile
+    container_name: failure-lab-mock-ai
+    ports:
+      - "9000:9000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:9000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: rag-backend
+    container_name: failure-lab-backend
     ports:
       - "8080:8000"
     environment:
       - DEBUG=true
       - SECRET_KEY=dev-secret-key-change-in-production
-      - DATABASE_URL=postgresql://rag_user:rag_password@postgres:5432/rag_platform
-      - REDIS_URL=redis://redis:6379
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - DATABASE_URL=postgresql+psycopg://lab_user:lab_password@postgres:5432/failure_lab
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - CHROMA_HOST=chromadb
       - CHROMA_PORT=8000
-      - VECTOR_DB_PROVIDER=chroma
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - CELERY_BROKER_URL=redis://redis:6379
-      - CELERY_RESULT_BACKEND=redis://redis:6379
+      - MOCK_AI_URL=http://mock-ai:9000
+      - DEPENDENCY_TIMEOUT_SECONDS=0.5
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-      elasticsearch:
-        condition: service_healthy
       chromadb:
+        condition: service_healthy
+      mock-ai:
         condition: service_healthy
     volumes:
       - ./backend:/app
-      - upload_data:/app/uploads
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
 
-  # Celery Worker
   celery-worker:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: rag-celery-worker
-    command: celery -A app.celery_app:celery worker --loglevel=info
+    container_name: failure-lab-worker
+    command: celery -A app.celery_app:celery worker -Q lab --loglevel=info
     environment:
       - DEBUG=true
       - SECRET_KEY=dev-secret-key-change-in-production
-      - DATABASE_URL=postgresql://rag_user:rag_password@postgres:5432/rag_platform
-      - REDIS_URL=redis://redis:6379
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - DATABASE_URL=postgresql+psycopg://lab_user:lab_password@postgres:5432/failure_lab
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - CHROMA_HOST=chromadb
       - CHROMA_PORT=8000
-      - VECTOR_DB_PROVIDER=chroma
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - CELERY_BROKER_URL=redis://redis:6379
-      - CELERY_RESULT_BACKEND=redis://redis:6379
+      - MOCK_AI_URL=http://mock-ai:9000
+      - DEPENDENCY_TIMEOUT_SECONDS=0.5
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-      backend:
+      mock-ai:
         condition: service_healthy
     volumes:
       - ./backend:/app
-      - upload_data:/app/uploads
 
-  # Celery Beat (for scheduled tasks)
-  celery-beat:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: rag-celery-beat
-    command: celery -A app.celery_app:celery beat --loglevel=info
-    environment:
-      - DEBUG=true
-      - SECRET_KEY=dev-secret-key-change-in-production
-      - DATABASE_URL=postgresql://rag_user:rag_password@postgres:5432/rag_platform
-      - REDIS_URL=redis://redis:6379
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
-      - CHROMA_HOST=chromadb
-      - CHROMA_PORT=8000
-      - VECTOR_DB_PROVIDER=chroma
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - CELERY_BROKER_URL=redis://redis:6379
-      - CELERY_RESULT_BACKEND=redis://redis:6379
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      backend:
-        condition: service_healthy
-    volumes:
-      - ./backend:/app
-      - celery_data:/app/celerybeat-schedule
-
-  # Frontend
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: rag-frontend
+    container_name: failure-lab-frontend
     ports:
       - "3000:3000"
     environment:
@@ -191,33 +144,27 @@ services:
       - ./frontend:/app
       - /app/node_modules
 
-  # Prometheus for metrics
   prometheus:
     image: prom/prometheus:latest
-    container_name: rag-prometheus
+    container_name: failure-lab-prometheus
     ports:
       - "9090:9090"
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
-      - "--web.console.libraries=/etc/prometheus/console_libraries"
-      - "--web.console.templates=/etc/prometheus/consoles"
       - "--web.enable-lifecycle"
 
-  # Grafana for visualization
   grafana:
     image: grafana/grafana:latest
-    container_name: rag-grafana
+    container_name: failure-lab-grafana
     ports:
       - "3001:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel
-      - GF_FEATURE_TOGGLES_ENABLE=ngalert
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
@@ -229,13 +176,10 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  elasticsearch_data:
   chromadb_data:
-  upload_data:
-  celery_data:
   prometheus_data:
   grafana_data:
 
 networks:
   default:
-    name: rag-network
+    name: failure-lab-network

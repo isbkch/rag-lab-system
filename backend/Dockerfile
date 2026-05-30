@@ -1,4 +1,4 @@
-# Multi-stage build for production optimization
+# Multi-stage build for the failure lab backend.
 FROM python:3.11-slim AS builder
 
 # Set environment variables
@@ -58,9 +58,7 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 # Create app directory
 WORKDIR /app
 
-# Create necessary directories
-RUN mkdir -p /app/uploads /app/logs && \
-    chown -R appuser:appuser /app
+RUN mkdir -p /app/logs && chown -R appuser:appuser /app
 
 # Copy application code
 COPY . .

@@ -44,7 +44,9 @@ def client(db_session: Session, monkeypatch: pytest.MonkeyPatch) -> TestClient:
 
     app.dependency_overrides[database_module.get_db] = override_get_db
     app.dependency_overrides[get_settings] = get_settings
-    monkeypatch.setattr("app.api.v1.endpoints.lab.run_scenario_task.delay", lambda *args: None)
+    monkeypatch.setattr(
+        "app.api.v1.endpoints.lab.run_scenario_task.delay", lambda *args: None
+    )
     try:
         with TestClient(app) as test_client:
             yield test_client

@@ -1,3 +1,1 @@
-"""
-Business logic services for the RAG platform.
-"""
+"""Business logic services for the failure laboratory."""

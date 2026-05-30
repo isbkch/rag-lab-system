@@ -23,7 +23,8 @@ def test_run_scenario_creates_run(client):
     payload = response.json()
     assert payload["scenario_id"] == "mock_ai_500"
     assert payload["status"] == "queued"
-    assert payload["parameters"] == {"mode": "error"}
+    assert payload["parameters"]["mode"] == "error"
+    assert payload["parameters"]["prompt"] == "error demo"
 
 
 def test_recent_runs_and_events(client):

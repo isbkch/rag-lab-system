@@ -3,33 +3,16 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  - job_name: "rag-backend"
+  - job_name: "failure-lab-backend"
     static_configs:
       - targets: ["backend:8000"]
     metrics_path: "/metrics"
-    scrape_interval: 15s
 
-  - job_name: "redis"
+  - job_name: "mock-ai"
     static_configs:
-      - targets: ["redis:6379"]
+      - targets: ["mock-ai:9000"]
+    metrics_path: "/metrics"
 
-  - job_name: "postgres"
+  - job_name: "prometheus"
     static_configs:
-      - targets: ["postgres:5432"]
-
-  - job_name: "elasticsearch"
-    static_configs:
-      - targets: ["elasticsearch:9200"]
-
-  - job_name: "chromadb"
-    static_configs:
-      - targets: ["chromadb:8000"]
-
-rule_files:
-  - "alert_rules.yml"
-
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets:
-            - alertmanager:9093
+      - targets: ["prometheus:9090"]
