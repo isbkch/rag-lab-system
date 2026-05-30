@@ -1,5 +1,5 @@
 # Multi-stage build for production optimization
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -20,7 +20,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 WORKDIR /app
 
 # Copy project files for dependency resolution
-COPY pyproject.toml .
+COPY pyproject.toml uv.lock .
 
 # Create virtual environment and install dependencies
 RUN uv venv /opt/venv
@@ -29,10 +29,10 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 # Install dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-dev
+    uv sync --locked --no-dev --no-install-project
 
 # Production stage
-FROM python:3.11-slim as production
+FROM python:3.11-slim AS production
 
 # Copy virtual environment and application files from builder stage
 COPY --from=builder /opt/venv /opt/venv

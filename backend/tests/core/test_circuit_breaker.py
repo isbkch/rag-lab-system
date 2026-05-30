@@ -29,12 +29,12 @@ class TestCircuitBreaker:
         openai_status = status["openai"]
         assert openai_status["state"] in ["closed", "open", "half-open"]
         assert openai_status["fail_max"] == 5
-        assert openai_status["timeout_duration"] == 60
+        assert openai_status["reset_timeout"] == 60
 
     @pytest.mark.asyncio
     async def test_async_circuit_breaker_success(self):
         """Test circuit breaker with successful calls."""
-        test_breaker = CircuitBreaker(fail_max=3, timeout_duration=5, name="test")
+        test_breaker = CircuitBreaker(fail_max=3, reset_timeout=5, name="test")
         call_count = 0
 
         @async_circuit_breaker(test_breaker)
@@ -54,7 +54,7 @@ class TestCircuitBreaker:
     @pytest.mark.asyncio
     async def test_async_circuit_breaker_failure(self):
         """Test circuit breaker opens after failures."""
-        test_breaker = CircuitBreaker(fail_max=3, timeout_duration=5, name="test_fail")
+        test_breaker = CircuitBreaker(fail_max=3, reset_timeout=5, name="test_fail")
         call_count = 0
 
         @async_circuit_breaker(test_breaker)
@@ -63,12 +63,16 @@ class TestCircuitBreaker:
             call_count += 1
             raise Exception("Test failure")
 
-        # Make calls that fail
-        for i in range(3):
+        # Make calls that fail before the threshold is reached.
+        for _ in range(2):
             with pytest.raises(Exception, match="Test failure"):
                 await failing_call()
 
-        # Circuit should be open now
+        # The threshold-reaching failure opens the circuit and raises the
+        # circuit breaker error.
+        with pytest.raises(CircuitBreakerError):
+            await failing_call()
+
         assert test_breaker.current_state == "open"
 
         # Next call should be blocked by circuit breaker
@@ -160,7 +164,7 @@ class TestCircuitBreaker:
             assert "state" in breaker_status
             assert "fail_counter" in breaker_status
             assert "fail_max" in breaker_status
-            assert "timeout_duration" in breaker_status
+            assert "reset_timeout" in breaker_status
             assert "is_available" in breaker_status
 
             # Initially, all should be closed and available

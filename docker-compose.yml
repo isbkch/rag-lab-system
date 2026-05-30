@@ -1,9 +1,7 @@
-version: "3.8"
-
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:15-alpine
+    image: postgres:17-alpine
     container_name: rag-postgres
     environment:
       POSTGRES_USER: rag_user
@@ -22,7 +20,7 @@ services:
 
   # Redis for caching and message broker
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     container_name: rag-redis
     ports:
       - "6379:6379"
@@ -36,7 +34,7 @@ services:
 
   # Elasticsearch for keyword search
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.4.1
     container_name: rag-elasticsearch
     environment:
       - discovery.type=single-node
@@ -56,7 +54,7 @@ services:
 
   # ChromaDB Vector Database
   chromadb:
-    image: ghcr.io/chroma-core/chroma:latest
+    image: ghcr.io/chroma-core/chroma:1.5.9
     container_name: rag-chromadb
     ports:
       - "8002:8000"
@@ -69,7 +67,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -f http://localhost:8000/api/v1/heartbeat || exit 1",
+          "curl -f http://localhost:8000/api/v2/heartbeat || exit 1",
         ]
       interval: 30s
       timeout: 10s
@@ -119,7 +117,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: rag-celery-worker
-    command: celery -A app.celery worker --loglevel=info
+    command: celery -A app.celery_app:celery worker --loglevel=info
     environment:
       - DEBUG=true
       - SECRET_KEY=dev-secret-key-change-in-production
@@ -149,7 +147,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: rag-celery-beat
-    command: celery -A app.celery beat --loglevel=info
+    command: celery -A app.celery_app:celery beat --loglevel=info
     environment:
       - DEBUG=true
       - SECRET_KEY=dev-secret-key-change-in-production

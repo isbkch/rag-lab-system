@@ -1,7 +1,5 @@
-version: "3.8"
-
 # Production configuration for the RAG platform
-# Use with: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+# Use with: docker compose -f docker-compose.yml -f docker-compose.prod.yml up
 
 services:
   # PostgreSQL Database with production settings
@@ -76,7 +74,7 @@ services:
       - LOG_LEVEL=INFO
     volumes:
       - upload_prod_data:/app/uploads
-    command: celery -A app.celery worker --loglevel=info --concurrency=4
+    command: celery -A app.celery_app:celery worker --loglevel=info --concurrency=4
 
   # Celery Beat with production settings
   celery-beat:

@@ -26,13 +26,13 @@ export const ENABLE_ANIMATIONS = import.meta.env.VITE_ENABLE_ANIMATIONS === 'tru
 export const RESULTS_PER_PAGE = parseInt(import.meta.env.VITE_RESULTS_PER_PAGE || '10');
 
 // Logging utility
-export const log = (...args: any[]) => {
+export const log = (...args: unknown[]) => {
   if (ENABLE_LOGGING) {
     console.log('[RAG Platform]', ...args);
   }
 };
 
-export const logError = (...args: any[]) => {
+export const logError = (...args: unknown[]) => {
   if (ENABLE_LOGGING) {
     console.error('[RAG Platform Error]', ...args);
   }

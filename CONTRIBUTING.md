@@ -47,7 +47,7 @@ By participating in this project, you agree to abide by our [Code of Conduct](CO
    
    # Frontend dependencies
    cd ../frontend
-   npm install
+   bun install
    ```
 
 4. **Install pre-commit hooks**:
@@ -68,8 +68,8 @@ pytest --cov=app --cov-report=html
 
 # Frontend tests
 cd frontend
-npm test
-npm run test:coverage
+bun run test
+bun run test:coverage
 ```
 
 ### Code Quality
@@ -86,8 +86,8 @@ mypy .                  # Type checking
 
 # Frontend linting
 cd frontend
-npm run lint           # ESLint
-npm run type-check     # TypeScript checking
+bun run lint           # ESLint
+bun run type-check     # TypeScript checking
 ```
 
 ## Contribution Guidelines

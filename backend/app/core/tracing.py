@@ -8,7 +8,7 @@ from functools import wraps
 from typing import Any, Dict, Optional
 
 from opentelemetry import metrics, trace
-from opentelemetry.exporter.jaeger.thrift import JaegerExporter
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.exporter.prometheus import PrometheusMetricReader
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
@@ -63,18 +63,12 @@ def init_tracing() -> None:
             trace_provider.add_span_processor(span_processor)
             logger.info("Tracing configured with console exporter")
 
-        # Jaeger exporter for production
-        jaeger_endpoint = os.getenv(
-            "JAEGER_ENDPOINT", "http://localhost:14268/api/traces"
-        )
-        if jaeger_endpoint:
-            jaeger_exporter = JaegerExporter(
-                endpoint=jaeger_endpoint,
-                collector_endpoint=jaeger_endpoint,
-            )
-            jaeger_processor = BatchSpanProcessor(jaeger_exporter)
-            trace_provider.add_span_processor(jaeger_processor)
-            logger.info(f"Tracing configured with Jaeger exporter: {jaeger_endpoint}")
+        otlp_endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+        if otlp_endpoint:
+            otlp_exporter = OTLPSpanExporter(endpoint=otlp_endpoint)
+            otlp_processor = BatchSpanProcessor(otlp_exporter)
+            trace_provider.add_span_processor(otlp_processor)
+            logger.info(f"Tracing configured with OTLP exporter: {otlp_endpoint}")
 
         # Set up metrics
         metric_readers = []

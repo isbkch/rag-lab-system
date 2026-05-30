@@ -287,7 +287,7 @@ On macOS, you might encounter issues building `faiss-cpu` due to missing system 
 
    ```bash
    cd frontend
-   npm install
+   bun install
    ```
 
 3. **Start PostgreSQL and Redis** (using Docker or local installation)
@@ -303,7 +303,7 @@ On macOS, you might encounter issues building `faiss-cpu` due to missing system 
 
    ```bash
    cd frontend
-   npm run dev
+   bun run dev
    ```
 
 ## ⚙️ Configuration
@@ -719,13 +719,13 @@ pytest tests/core/test_auth.py              # Authentication tests
 cd frontend
 
 # Run unit tests
-npm test
+bun run test
 
 # Run tests with coverage
-npm run test:coverage
+bun run test:coverage
 
 # Run E2E tests
-npm run test:e2e
+bun run test:e2e
 ```
 
 ## 🔧 Development Workflow
@@ -742,9 +742,9 @@ mypy .                  # Type checking
 
 # Frontend linting
 cd frontend
-npm run lint           # ESLint
-npm run lint:fix       # Auto-fix issues
-npm run type-check     # TypeScript checking
+bun run lint           # ESLint
+bun run lint:fix       # Auto-fix issues
+bun run type-check     # TypeScript checking
 ```
 
 ### Database Migrations
@@ -877,15 +877,15 @@ curl http://localhost:8000/health
 # Ensure proxy target matches backend URL
 ```
 
-**Issue**: `npm install` fails
+**Issue**: `bun install` fails
 
 ```bash
-# Clear npm cache
-npm cache clean --force
+# Clear bun cache
+bun cache clean --force
 
 # Delete node_modules and reinstall
 rm -rf node_modules package-lock.json
-npm install
+bun install
 ```
 
 #### Docker Issues

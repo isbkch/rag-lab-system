@@ -82,7 +82,7 @@ function Search() {
             setStreamingStatus("");
           }
         }, searchType);
-      } catch (err) {
+      } catch {
         setError("Streaming search failed. Please try again.");
         setLoading(false);
         setStreamingStatus("");
@@ -395,7 +395,7 @@ function Documents() {
       setDocuments(response.documents);
       setTotal(response.total);
       setTotalPages(response.total_pages);
-    } catch (err) {
+    } catch {
       setError("Failed to load documents. Please try again.");
     } finally {
       setLoading(false);
@@ -416,7 +416,7 @@ function Documents() {
     try {
       await deleteDocument(documentId);
       await loadDocuments(); // Refresh the list
-    } catch (err) {
+    } catch {
       setError("Failed to delete document. Please try again.");
     } finally {
       setActionLoading(prev => ({ ...prev, [documentId]: false }));
@@ -430,7 +430,7 @@ function Documents() {
       await reindexDocument(documentId);
       setError(null);
       // You might want to show a success message here
-    } catch (err) {
+    } catch {
       setError("Failed to reindex document. Please try again.");
     } finally {
       setActionLoading(prev => ({ ...prev, [`reindex_${documentId}`]: false }));

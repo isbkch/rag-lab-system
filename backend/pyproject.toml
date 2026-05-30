@@ -2,73 +2,72 @@
 name = "rag-starter-kit-backend"
 version = "0.1.0"
 description = "Enterprise RAG Platform Backend - FastAPI application with vector search capabilities"
-requires-python = "~=3.11"
+requires-python = ">=3.11,<3.12"
 dependencies = [
     # FastAPI and server
-    "fastapi==0.104.1",
-    "uvicorn[standard]==0.24.0",
-    "python-multipart==0.0.6",
-    "python-jose[cryptography]==3.3.0",
+    "fastapi>=0.136.3,<1.0.0",
+    "uvicorn[standard]>=0.48.0,<1.0.0",
+    "python-multipart>=0.0.29,<0.1.0",
+    "python-jose[cryptography]>=3.5.0,<4.0.0",
     "passlib[bcrypt]==1.7.4",
     # Database
-    "sqlalchemy==2.0.23",
-    "alembic==1.12.1",
-    "psycopg",
-    "redis[hiredis]==5.0.1",
-    "numpy==1.26.0",
+    "sqlalchemy>=2.0.50,<3.0.0",
+    "alembic>=1.18.4,<2.0.0",
+    "psycopg>=3.3.4,<4.0.0",
+    "redis[hiredis]>=8.0.0,<9.0.0",
+    "numpy>=2.4.6,<3.0.0",
     # Pydantic and validation
-    "pydantic==2.5.0",
-    "pydantic-settings==2.1.0",
+    "pydantic>=2.13.4,<3.0.0",
+    "pydantic-settings>=2.14.1,<3.0.0",
     # Document processing
-    "PyPDF2==3.0.1",
-    "pdfplumber==0.10.3",
-    "python-docx==1.1.0",
-    "markdown>=3.4.0,<4.0.0",
-    "beautifulsoup4==4.12.2",
-    "pypandoc==1.12",
+    "pypdf>=6.5.1,<7.0.0",
+    "pdfplumber>=0.11.9,<0.12.0",
+    "python-docx>=1.2.0,<2.0.0",
+    "markdown>=3.10.2,<4.0.0",
+    "beautifulsoup4>=4.14.3,<5.0.0",
+    "pypandoc>=1.17,<2.0",
     # Vector databases
-    "pinecone-client==2.2.4",
-    "weaviate-client==3.25.3",
-    "chromadb==0.4.18",
+    "pinecone-client>=6.0.0,<7.0.0",
+    "weaviate-client>=4.21.2,<5.0.0",
+    "chromadb>=1.5.9,<2.0.0",
     # Search and embeddings
-    "langchain==0.0.335",
-    "langchain-openai==0.0.2",
-    "openai>=1.6.1,<2.0.0",
-    "elasticsearch==8.11.0",
-    "faiss-cpu==1.11.0",
+    "langchain-text-splitters>=1.1.2,<2.0.0",
+    "openai>=2.38.0,<3.0.0",
+    "elasticsearch>=9.4.1,<10.0.0",
+    "faiss-cpu>=1.14.2,<2.0.0",
     "rank-bm25==0.2.2",
     # Text processing
-    "nltk==3.8.1",
-    "spacy==3.7.2",
-    "tiktoken==0.5.2",
+    "nltk>=3.9.4,<4.0.0",
+    "spacy>=3.8.14,<4.0.0",
+    "tiktoken>=0.13.0,<0.14.0",
     # Async and background tasks
-    "celery==5.3.4",
-    "aiofiles==23.2.1",
-    "httpx==0.25.2",
+    "celery>=5.6.3,<6.0.0",
+    "aiofiles>=25.1.0,<26.0.0",
+    "httpx>=0.28.1,<0.29.0",
     # Monitoring and observability
-    "prometheus-client==0.19.0",
-    "opentelemetry-api==1.21.0",
-    "opentelemetry-sdk==1.21.0",
-    "opentelemetry-instrumentation-fastapi==0.42b0",
-    "structlog==23.2.0",
+    "prometheus-client>=0.25.0,<0.26.0",
+    "opentelemetry-api>=1.21.0,<2.0.0",
+    "opentelemetry-sdk>=1.21.0,<2.0.0",
+    "opentelemetry-instrumentation-fastapi>=0.42b0,<1.0.0",
+    "structlog>=25.5.0,<26.0.0",
     # Rate limiting and caching
-    "slowapi==0.1.9",
-    "aiocache==0.12.2",
+    "slowapi>=0.1.9,<0.2.0",
+    "aiocache>=0.12.3,<0.13.0",
     # Circuit breaker and resilience
-    "pybreaker==1.0.1",
+    "pybreaker>=1.4.1,<2.0.0",
     # Error tracking
-    "sentry-sdk[fastapi]==1.39.2",
+    "sentry-sdk[fastapi]>=2.61.0,<3.0.0",
     # Utilities
-    "python-dotenv==1.0.0",
-    "click==8.1.7",
-    "rich==13.7.0",
-    "typer==0.9.0",
-    "psutil==5.9.6",
+    "python-dotenv>=1.2.2,<2.0.0",
+    "click>=8.4.1,<9.0.0",
+    "rich>=15.0.0,<16.0.0",
+    "typer>=0.26.3,<0.27.0",
+    "psutil>=7.2.2,<8.0.0",
     # Production server
-    "gunicorn==21.2.0",
-    "aiosqlite>=0.21.0",
-    "greenlet>=3.2.3",
-    "opentelemetry-exporter-jaeger>=1.21.0",
+    "gunicorn>=26.0.0,<27.0.0",
+    "aiosqlite>=0.22.1,<0.23.0",
+    "greenlet>=3.5.1,<4.0.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.42.1,<2.0.0",
     "opentelemetry-exporter-prometheus>=0.42b0",
     "opentelemetry-instrumentation-httpx>=0.42b0",
     "opentelemetry-instrumentation-sqlalchemy>=0.42b0",
@@ -78,19 +77,18 @@ dependencies = [
     "sentence-transformers>=5.0.0",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     # Testing
-    "pytest==7.4.3",
-    "pytest-asyncio==0.21.1",
-    "pytest-cov==4.1.0",
-    "httpx==0.25.2",
+    "pytest>=9.0.3,<10.0.0",
+    "pytest-asyncio>=1.4.0,<2.0.0",
+    "pytest-cov>=7.1.0,<8.0.0",
 
     # Development tools
-    "black==23.11.0",
-    "isort==5.12.0",
-    "flake8==6.1.0",
-    "mypy==1.7.1",
+    "black>=26.5.1,<27.0.0",
+    "isort>=8.0.1,<9.0.0",
+    "flake8>=7.3.0,<8.0.0",
+    "mypy>=2.1.0,<3.0.0",
 ]
 
 [build-system]
@@ -99,21 +97,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
-
-[tool.uv]
-dev-dependencies = [
-    # Testing
-    "pytest==7.4.3",
-    "pytest-asyncio==0.21.1",
-    "pytest-cov==4.1.0",
-    "httpx==0.25.2",
-
-    # Development tools
-    "black==23.11.0",
-    "isort==5.12.0",
-    "flake8==6.1.0",
-    "mypy==1.7.1",
-]
 
 [tool.black]
 line-length = 88

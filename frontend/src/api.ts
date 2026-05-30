@@ -26,6 +26,22 @@ export interface SearchResponse {
   metadata?: Record<string, unknown>;
 }
 
+export interface StreamingSearchMetadata {
+  type: "metadata";
+  query: string;
+  search_type: string;
+  limit: number;
+  timestamp: string;
+}
+
+export interface StreamingSearchSummary {
+  type: "summary";
+  total_results: number;
+  search_time: number;
+  search_type: string;
+  metadata?: Record<string, unknown>;
+}
+
 export async function search(
   query: string,
   searchType: "hybrid" | "vector" | "keyword" = "hybrid",
@@ -65,9 +81,9 @@ export async function search(
 }
 
 export interface StreamingSearchCallbacks {
-  onMetadata?: (metadata: any) => void;
+  onMetadata?: (metadata: StreamingSearchMetadata) => void;
   onResult?: (result: SearchResult, index: number) => void;
-  onSummary?: (summary: any) => void;
+  onSummary?: (summary: StreamingSearchSummary) => void;
   onError?: (error: string) => void;
   onComplete?: () => void;
 }

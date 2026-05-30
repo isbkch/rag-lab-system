@@ -682,10 +682,10 @@ class DocumentProcessor:
         result = {"errors": [], "warnings": []}
 
         try:
-            import PyPDF2
+            import pypdf
 
             with open(file_path, "rb") as file:
-                pdf_reader = PyPDF2.PdfReader(file)
+                pdf_reader = pypdf.PdfReader(file)
 
                 # Check if PDF is encrypted
                 if pdf_reader.is_encrypted:

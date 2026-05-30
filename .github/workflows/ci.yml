@@ -48,14 +48,14 @@ jobs:
       - name: Install frontend dependencies
         run: |
           cd frontend
-          npm install
+          bun install
 
       - name: Run frontend linting
         run: |
           cd frontend
-          npm run lint
+          bun run lint
 
       - name: Run frontend build
         run: |
           cd frontend
-          npm run build
+          bun run build

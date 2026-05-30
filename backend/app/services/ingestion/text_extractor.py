@@ -9,7 +9,7 @@ from typing import Optional
 
 import markdown
 import pdfplumber
-import PyPDF2
+import pypdf
 from bs4 import BeautifulSoup
 from docx import Document as DocxDocument
 
@@ -43,8 +43,8 @@ class PDFTextExtractor(BaseTextExtractor):
         except Exception as e:
             logger.warning(f"pdfplumber failed for {file_path}: {e}")
             try:
-                # Fallback to PyPDF2
-                return self._extract_with_pypdf2(file_path)
+                # Fallback to pypdf
+                return self._extract_with_pypdf(file_path)
             except Exception as e2:
                 logger.error(f"Both PDF extractors failed for {file_path}: {e2}")
                 raise ValueError(f"Failed to extract text from PDF: {e2}")
@@ -59,11 +59,11 @@ class PDFTextExtractor(BaseTextExtractor):
                     text_content.append(text)
         return "\n\n".join(text_content)
 
-    def _extract_with_pypdf2(self, file_path: str) -> str:
-        """Extract text using PyPDF2."""
+    def _extract_with_pypdf(self, file_path: str) -> str:
+        """Extract text using pypdf."""
         text_content = []
         with open(file_path, "rb") as file:
-            pdf_reader = PyPDF2.PdfReader(file)
+            pdf_reader = pypdf.PdfReader(file)
             for page in pdf_reader.pages:
                 text = page.extract_text()
                 if text:
@@ -76,7 +76,7 @@ class PDFTextExtractor(BaseTextExtractor):
 
         try:
             with open(file_path, "rb") as file:
-                pdf_reader = PyPDF2.PdfReader(file)
+                pdf_reader = pypdf.PdfReader(file)
 
                 # Basic metadata
                 metadata.page_count = len(pdf_reader.pages)
